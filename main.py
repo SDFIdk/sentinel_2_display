@@ -24,8 +24,10 @@ def main(safe_dir):
     rgbi_bands = build_vrts.build_rgbi_vrt()
 
     #implement 3CLoud_mask_SCL.bat
-    cloud_mask = CloudMask(available_tiles, scl_vrt, qc_vrt, today.strftime('%Y%m%d'))
-    scl_cloud_mask = cloud_mask.scl_to_cloudmask()
+    cloud_mask = CloudMask(available_tiles, date_dir, scl_vrt, qc_vrt, today.strftime('%Y%m%d'))
+    cloud_mask.scl_to_cloudmask() #find out what is needed from here and return it
+
+    
 
 
 

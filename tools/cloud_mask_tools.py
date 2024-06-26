@@ -60,7 +60,6 @@ class CMTools():
 
     def translate_vector(input_file, output_file, target_srs):
 
-        # Execute ogr2ogr to reproject the shapefile
         gdal.VectorTranslate(
             output_file,
             input_file,

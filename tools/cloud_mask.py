@@ -1,9 +1,15 @@
 from tools.cloud_mask_tools import CMTools
+import os
+import pathlib
 
 class CloudMask():
 
-    def __init__(self, available_tiles, scl_band, qc_band, today):
+    def __init__(self, available_tiles, working_dir, scl_band, qc_band, today):
         self.available_tiles = available_tiles
+        self.working_dir = working_dir
+        self.cloud_dir = os.path.join(working_dir + "cloud_mask")
+        pathlib.Path(self.cloud_dir).mkdir(parents=True, exist_ok=True)
+
         self.scl = scl_band
         self.qc = qc_band
         self.today = today
@@ -13,8 +19,15 @@ class CloudMask():
 
         #current code saves all inbetween steps as seperate files. In future, maybe remove excess?
 
-        scl_tif = "SCL01.tif"
-        calc_path = "gdal_calc.py"
+        scl_tif = os.path.join(self.cloud_dir,  "SCL01.tif")
+        calc_path = os.path.join(self.cloud_dir,  "gdal_calc.py")
+        scl_250 = os.path.join(self.cloud_dir,  "SCL01_250m.tif")
+        cloud_nodata = os.path.join(self.cloud_dir, "cloud_and_nodata.shp")
+        cloud_nodata_buffer = os.path.join(self.cloud_dir, "cloud_and_nodata_buffer.shp")
+        footprint_60 = os.path.join(self.cloud_dir, "footprint_60.tif")
+        out_buffer = os.path.join(self.cloud_dir, "out_buffer.shp")
+        out_buffer_32 = os.path.join(self.cloud_dir, "out_buffer32")
+        out_buffer_33 = os.path.join(self.cloud_dir, "out_buffer33")
 
         command = [
             calc_path,
@@ -25,31 +38,23 @@ class CloudMask():
         ]
 
         CMTools.run_gdal_calc(self.scl, scl_tif, command)
-        CMTools.resolution_averaging(scl_tif, "SCL01_250m.tif")
-        CMTools.polygonalize_tif("SCL01_250m.tif", "cloud_and_nodata.shp")
-        CMTools.buffer_nodata("SCL01_250m.tif", "cloud_and_nodata_buffer.shp")
+        CMTools.resolution_averaging(scl_tif, scl_250)
+        CMTools.polygonalize_tif(scl_250,cloud_nodata)
+        CMTools.buffer_nodata(cloud_nodata, cloud_nodata_buffer)
 
         command = [
             calc_path,
             "--format=GTiff",
             "--type=Float32"
             "-A", self.scl,
-            "--outfile", "footprint_60.tif",
+            "--outfile", footprint_60,
             "--calc", f"0*(A<=0.01) + (A>0.01)*{self.today}"
         ]
-        CMTools.run_gdal_calc(self.qc, "footprint_60.tif", command)
-        CMTools.run_gdal_calc("cloud_and_nodata_buffer.shp", "footprint_60.tif", self.today, inverse = True)
-        CMTools.run_gdal_calc("cloud_and_nodata_buffer.shp", "footprint_60.tif", 0)
-        CMTools.polygonalize_tif("footprint_60.tif", "out_buffer.shp")
-        CMTools.translate_vector("footprint_60.tif", "out_buffer32", "EPSG:32632")
-        CMTools.translate_vector("footprint_60.tif", "out_buffer33", "EPSG:32633")
-        
+        CMTools.run_gdal_calc(self.qc, footprint_60, command)
+        CMTools.run_gdal_calc(cloud_nodata_buffer, footprint_60, self.today, inverse = True)
+        CMTools.run_gdal_calc(cloud_nodata_buffer, footprint_60, 0)
+        CMTools.polygonalize_tif(footprint_60, out_buffer)
+        CMTools.translate_vector(footprint_60, out_buffer_32, "EPSG:32632")
+        CMTools.translate_vector(footprint_60, out_buffer_33, "EPSG:32633")
 
-
-
-        return scl_tif
-
-
-# call Gdal_polygonize -mask footprint_60.tif footprint_60.tif out_buffer.shp
-# call ogr2ogr -t_srs epsg:32632 out_buffer32.shp out_buffer.shp
-# call ogr2ogr -t_srs epsg:32633 out_buffer33.shp out_buffer.shp
+        return #find out what is needed from here and return it
