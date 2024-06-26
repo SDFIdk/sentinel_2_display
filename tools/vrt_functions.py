@@ -2,6 +2,7 @@ from osgeo import gdal
 import os
 import glob
 import tempfile
+from tools.constants import Constants
 
 class VRTFunctions:
 
@@ -52,7 +53,6 @@ class VRTFunctions:
 
         return output
 
-
     def build_rgbi_vrt(datasets, output = None):
         """
         Builds a vrt with seperate bands from a list of dataset paths
@@ -64,3 +64,22 @@ class VRTFunctions:
         datasets = [gdal.Open(input_file) for input_file in datasets]
 
         gdal.BuildVRT(output, datasets, seperate = True)
+
+    def sort_tiles_by_utm(available_tiles):
+
+        dk_tiles = Constants.get_tile_list()
+
+        #hardcoded for utm zones covering DK 
+        utm_32 = []
+        utm_33 = []
+
+        #CHECK THAT A TILE ID IS BEING IF'D AND NOT AN ENTIRE PATH. OR SHOULD IT BE THE PATH?
+        for tile in available_tiles:
+            if tile in dk_tiles:
+                try:
+                    if tile[1:2] == '32': utm_32.append(tile)
+                    elif tile[1:2] == '33': utm_33.append(tile)
+                except Exception:
+                    print(f'UTM {tile[1:2]} from file {tile} is not a valid zone for DK')
+
+        return utm_32, utm_33
