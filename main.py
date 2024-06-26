@@ -1,5 +1,7 @@
 from datetime import datetime
 import os
+import sys
+import pathlib
 from download.cdse_tile_downloader import cdse_tile_downloader
 from download.s2_post_download import SAFE_handler
 from tools.vrt_functions import VRTFunctions
@@ -67,19 +69,24 @@ if __name__ == "__main__":
 
     start_date = datetime.today().strftime('%Y-%m-%d')
 
-    safe_dir = 'zip'
-    os.mkdir(safe_dir)
+    safe_dir = 'zip/'
+    pathlib.Path(safe_dir).mkdir(parents=True, exist_ok=True)
 
-    today = datetime.today().strftime('%Y%m%d')
-    date_dir = today + '/'
-    os.mkdir(date_dir)
+    # today = datetime.today()
+
+    today = datetime.strptime("2024-06-07", '%Y-%m-%d').date()    #TEST_DATE WITH DATA
+    date_dir = today.strftime('%Y%m%d') + '/'
+    pathlib.Path(date_dir).mkdir(parents=True, exist_ok=True)
+
 
     available_tiles = get_data(
-        start_date = datetime.today().strftime('%Y-%m-%d'), 
+        start_date = today, 
         safe_dir = safe_dir, 
         date_dir = date_dir
         )
     
+    sys.exit()
+
     qc_vrt = build_qc_vrt(available_tiles)
     scl_vrt = build_qc_vrt(available_tiles)
 
