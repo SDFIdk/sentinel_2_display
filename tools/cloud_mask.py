@@ -1,4 +1,5 @@
 from tools.cloud_mask_tools import CMTools
+from tools.utils import Utils
 import os
 import pathlib
 
@@ -9,6 +10,7 @@ class CloudMask():
         self.working_dir = working_dir
         self.cloud_dir = os.path.join(working_dir + "cloud_mask")
         pathlib.Path(self.cloud_dir).mkdir(parents=True, exist_ok=True)
+        self.calc_path = "tools/gdal_calc.py"
 
         self.scl = scl_band
         self.qc = qc_band
@@ -16,11 +18,10 @@ class CloudMask():
 
 
     def scl_to_cloudmask(self):
-
         #current code saves all inbetween steps as seperate files. In future, maybe remove excess?
 
+        calc_path = "tools/gdal_calc.py"
         scl_tif = os.path.join(self.cloud_dir,  "SCL01.tif")
-        calc_path = os.path.join(self.cloud_dir,  "gdal_calc.py")
         scl_250 = os.path.join(self.cloud_dir,  "SCL01_250m.tif")
         cloud_nodata = os.path.join(self.cloud_dir, "cloud_and_nodata.shp")
         cloud_nodata_buffer = os.path.join(self.cloud_dir, "cloud_and_nodata_buffer.shp")
@@ -30,31 +31,36 @@ class CloudMask():
         out_buffer_33 = os.path.join(self.cloud_dir, "out_buffer33")
 
         command = [
-            calc_path,
+            self.calc_path,
             "--format=GTiff",
             "-A", self.scl,
             "--outfile", scl_tif,
             "--calc", "(A<=6)*0 + (A>=7)*(A<=10)*1 + (A>10)*0"
         ]
-
-        CMTools.run_gdal_calc(self.scl, scl_tif, command)
+        Utils.run_gdal_calc(command)
         CMTools.resolution_averaging(scl_tif, scl_250)
         CMTools.polygonalize_tif(scl_250,cloud_nodata)
         CMTools.buffer_nodata(cloud_nodata, cloud_nodata_buffer)
 
         command = [
-            calc_path,
+            self.calc_path,
             "--format=GTiff",
             "--type=Float32"
             "-A", self.scl,
             "--outfile", footprint_60,
             "--calc", f"0*(A<=0.01) + (A>0.01)*{self.today}"
         ]
-        CMTools.run_gdal_calc(self.qc, footprint_60, command)
-        CMTools.run_gdal_calc(cloud_nodata_buffer, footprint_60, self.today, inverse = True)
-        CMTools.run_gdal_calc(cloud_nodata_buffer, footprint_60, 0)
+        Utils.run_gdal_calc(command)
+        CMTools.burn_cloudbuffer(cloud_nodata_buffer, footprint_60, self.today, inverse = True)
+        CMTools.burn_cloudbuffer(cloud_nodata_buffer, footprint_60, 0)
         CMTools.polygonalize_tif(footprint_60, out_buffer)
         CMTools.translate_vector(footprint_60, out_buffer_32, "EPSG:32632")
         CMTools.translate_vector(footprint_60, out_buffer_33, "EPSG:32633")
 
-        return #find out what is needed from here and return it
+
+        #Update footprint
+        footprint = CMTools.update_footprint(footprint_60, "FOOTPRINT", self.today)
+
+
+
+        return out_buffer_32, out_buffer_33, footprint

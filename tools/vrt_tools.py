@@ -1,27 +1,20 @@
 from osgeo import gdal
 import os
-import glob
 import tempfile
 from tools.constants import Constants
-
+from tools.utils import Utils
 
 class VRTTools:
 
     def combine_common_utm_files(
             vrt_input_files,  
-            utm,
-            ext = 'jp2', 
+            output,
             crs = 'EPSG:25832', 
             resample = 'cubic', 
-            output = None
             ):
-        
         """
-        build VRT from files in dir with same UTM crs and warp to CRS
+        Build VRT from files in dir with same UTM crs and warp to CRS
         """
-
-        if not output:
-            output = f"sentinel_B02_UTM{utm}_{crs}.vrt"
 
         with tempfile.NamedTemporaryFile(suffix='.vrt', delete=True, delete_on_close = True) as temp_vrt:
             tmp = temp_vrt.name
@@ -67,9 +60,10 @@ class VRTTools:
         #CHECK THAT A TILE ID IS A PATH AND THAT EVERYTHING WORKS WITH THAT
         for tile in available_tiles:
             if tile in dk_tiles:
+                utm = Utils.extract_utm(tile)
                 try:
-                    if tile[1:2] == '32': utm_32.append(tile)
-                    elif tile[1:2] == '33': utm_33.append(tile)
+                    if utm == '32': utm_32.append(tile)
+                    elif utm == '33': utm_33.append(tile)
                 except Exception:
                     print(f'UTM {tile[1:2]} from file {tile} is not a valid zone for DK')
 
@@ -84,3 +78,14 @@ class VRTTools:
         gdal.BuildVRT(output, datasets, options=options)
 
 
+    def apply_buffer_to_vrt(input_vrt, output, mask):
+
+        gdal.Open(input_vrt)
+        gdal.Warp(
+            output,
+            input_vrt,
+            cutlineDSName=mask,
+            resampleAlg='cubic',
+            blend=True,
+            cutlineBlend=24
+        )
