@@ -2,7 +2,7 @@ import os
 import argparse
 import zipfile
 import shutil
-from tools.constants import Constants
+from constants.constants import Constants
 
 class SAFE_handler:
     """

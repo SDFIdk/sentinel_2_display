@@ -2,7 +2,7 @@ from cdsetool.query import query_features
 from cdsetool.credentials import Credentials
 from cdsetool.download import download_features, download_feature
 from cdsetool.monitor import StatusMonitor
-from tools.constants import Constants
+from constants.constants import Constants
 from datetime import datetime, timedelta
 from download.s2_post_download import SAFE_handler
 import sys

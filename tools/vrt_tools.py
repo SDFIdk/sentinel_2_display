@@ -1,7 +1,7 @@
 from osgeo import gdal
 import os
 import tempfile
-from tools.constants import Constants
+from constants.constants import Constants
 from tools.utils import Utils
 
 class VRTTools:
