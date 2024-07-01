@@ -1,6 +1,7 @@
 from osgeo import gdal
 import os
 import tempfile
+import subprocess
 from constants.constants import Constants
 from tools.utils import Utils
 
@@ -89,3 +90,41 @@ class VRTTools:
             blend=True,
             cutlineBlend=24
         )
+
+
+    def convert_to_8bit(input_tif, eightbit_output):
+        
+        gdal.Translate(
+            eightbit_output,
+            input_tif,
+            outputType=gdal.GDT_Byte,
+            scaleParams=[
+                [0, 7500, 0, 255],
+                [0, 7500, 0, 255],
+                [0, 7500, 0, 255],
+                [0, 10000, 0, 255]
+            ]
+        )
+
+
+
+    def build_lut_vrt(output_vrt, input_lut_tifs, lut_files):
+
+        # install gdal lut somehow? Can this be a file to be included in the package like calc?
+        # is it related to this https://github.com/sudhirmurthy/gdal-examples/blob/master/gdal_lut.py   ?
+
+        for i, lut_file in enumerate(lut_files, start=1):
+            output_lut_tif = input_lut_tifs[i-1]
+            subprocess.run([
+                "gdal_lut",
+                output_vrt,
+                "-srcband", str(i), 
+                output_lut_tif,
+                "-lutfile", lut_file
+            ])
+            
+
+        VRTTools.build_lut_vrt(input_lut_tifs, output_vrt)
+
+        
+
