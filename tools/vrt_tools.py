@@ -71,11 +71,11 @@ class VRTTools:
         return utm_32, utm_33
     
 
-    def vrt_from_bands(band_list, output, resample = 'cubic'):
+    def vrt_from_bands(band_list, output, resample = 'cubic', separate = True):
 
         datasets = [gdal.Open(band) for band in band_list]
 
-        options = gdal.WarpOptions(resample=resample, separate = True)
+        options = gdal.WarpOptions(resample=resample, separate=separate)
         gdal.BuildVRT(output, datasets, options=options)
 
 
@@ -108,23 +108,29 @@ class VRTTools:
 
 
 
-    def build_lut_vrt(output_vrt, input_lut_tifs, lut_files):
+    def build_lut(output_vrt, lut_instructions):
 
         # install gdal lut somehow? Can this be a file to be included in the package like calc?
         # is it related to this https://github.com/sudhirmurthy/gdal-examples/blob/master/gdal_lut.py   ?
 
-        for i, lut_file in enumerate(lut_files, start=1):
-            output_lut_tif = input_lut_tifs[i-1]
+        outputs = []
+        for i, lut in enumerate(lut_instructions, start=1):
+            output_lut_tif = output_vrt.replace(".tif", f"_{i}.tif")
+            outputs.append(output_lut_tif)
             subprocess.run([
                 "gdal_lut",
                 output_vrt,
                 "-srcband", str(i), 
                 output_lut_tif,
-                "-lutfile", lut_file
+                "-lutfile", lut
             ])
-            
 
-        VRTTools.build_lut_vrt(input_lut_tifs, output_vrt)
+        return outputs
+
+
+    def build_lut_vrt(input_lut_tifs, output_vrt):
+
+        VRTTools.build_lut(input_lut_tifs, output_vrt)
 
         
 

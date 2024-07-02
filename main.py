@@ -6,6 +6,7 @@ from download.cdse_tile_downloader import get_data
 from tools.build_vrts import BuildVRTs
 from tools.cloud_mask import CloudMask
 from tools.update_rgbi import TIFFBurner
+from tools.generate_cut_vrt import cut_vrt
 
 def main(safe_dir):
 
@@ -49,12 +50,21 @@ def main(safe_dir):
     #4update_All_run.bat
     mask_burner = TIFFBurner(out_buffer32, out_buffer33)
     rgbi_tiffs = mask_burner.burn_to_tiff(rgbi_bands, rgbi_destination)
-    
-    rgbi_luts = [BuildVRTs.build_lut_vrt(rgbi) for rgbi in rgbi_luts]
+
+    rgbi_luts = [BuildVRTs.lut_vrt_from_rgbi(rgbi) for rgbi in rgbi_luts]
 
     ndvi_tiffs = mask_burner.burn_to_tiff(ndvi_bands, ndvi_destination)
     evi_tiffs = mask_burner.burn_to_tiff(evi_bands, evi_destination)
     lai_tiffs = mask_burner.burn_to_tiff(lai_bands, lai_destination)
+
+    #are VI bands meant to be part of the LUTs or are they separate files?
+
+    lut_vrts = BuildVRTs.lut_vrt_from_rgbi(rgbi_luts)
+
+    cut_vrt(lut_vrts)
+
+
+
 
     #run_gdal_lut.bat
     #this part might need changing source code wise, as it may need incorporating the VIs
@@ -62,6 +72,7 @@ def main(safe_dir):
     # cd X:\2024_sentinel\date\20240401
     # call Update_10km_WMS.bat
 
+    
 
 
     

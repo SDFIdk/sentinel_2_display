@@ -157,94 +157,31 @@ class BuildVRTs:
         return lai_vrts
     
     
-    def build_lut_vrt(input_tif):
+    def lut_vrt_from_rgbi(rgbi_tifs):
         """
         Applies the same process as run_gdal_lut.bat on a single RGBI tif.
         Outputs are extrapolated from input and stored in same directory.
         Returns path to final output
         """
+    	
+        lut_vrts = []
+        for rgbi_tif in rgbi_tifs:
+            eightbit_tif = rgbi_tif.replace(".tif", "_8bit.tif")
+            VRTTools.convert_to_8bit(rgbi_tif, eightbit_tif)
 
-        eightbit_raster = input_tif.replace(".tif", "_8bit.tif")
+            lut_instructions = [
+                "constants/lut_1.txt",
+                "constants/lut_2.txt",
+                "constants/lut_3.txt",
+                "constants/lut_4.txt",
+            ]
 
-        VRTTools.convert_to_8bit(input_tif, input_tif.replace(".tif", "_8bit.tif"))
+            lut_tifs = VRTTools.build_lut(eightbit_tif, lut_instructions)
 
-        lut_tables = [
-            "constants/lut_1.txt",
-            "constants/lut_2.txt",
-            "constants/lut_3.txt",
-            "constants/lut_4.txt",
-        ]
+            output_vrt = eightbit_tif.replace(".tif", "_lut.vrt")
+            VRTTools.build_lut_vrt(lut_tifs, output_vrt)
 
+            lut_vrts.append(output_vrt)
+        
 
-        input_lut_tifs = [
-            input_tif.replace(".tif", "_8bit_1.tif"),
-            input_tif.replace(".tif", "_8bit_2.tif"),
-            input_tif.replace(".tif", "_8bit_3.tif"),
-            input_tif.replace(".tif", "_8bit_4.tif"),
-        ]
-
-        output_vrt = eightbit_raster.replace(".tif", "_lut.vrt")
-
-
-        # # install gdal lut somehow? Can this be a file to be included in the package like calc?
-        # # is it related to this https://github.com/sudhirmurthy/gdal-examples/blob/master/gdal_lut.py   ?
-        # for i, lut_file in enumerate(lut_files, start=1):
-        #     output_lut_tif = f"32UMF_RGBI_8bit_{i}.tif"
-        #     subprocess.run([
-        #         "gdal_lut",
-        #         eightbit_output,
-        #         "-srcband", str(i), 
-        #         output_lut_tif,
-        #         "-lutfile", lut_file
-        #     ])
-
-        # gdal.BuildVRT(output_vrt, input_lut_tifs, separate=True)
-
-        VRTTools.build_lut_vrt(input_lut_tifs, output_vrt, lut_tables)
-        return output_vrt
-
-
-                #entire code from CGPT just in case
-                # input_tif = "32UMF_RGBI.tif"
-                # output_tif = "32UMF_RGBI_8bit.tif"
-
-                # gdal.Translate(
-                #     output_tif,
-                #     input_tif,
-                #     outputType=gdal.GDT_Byte,
-                #     scaleParams=[
-                #         [0, 7500, 0, 255],
-                #         [0, 7500, 0, 255],
-                #         [0, 7500, 0, 255],
-                #         [0, 10000, 0, 255]
-                #     ]
-                # )
-
-                # # GDAL LUT
-                # lut_files = [
-                #     "X:\\2021_Sentinel\\Config\\gdal_lut\\gdal_lut_1.txt",
-                #     "X:\\2021_Sentinel\\Config\\gdal_lut\\gdal_lut_2.txt",
-                #     "X:\\2021_Sentinel\\Config\\gdal_lut\\gdal_lut_3.txt",
-                #     "X:\\2021_Sentinel\\Config\\gdal_lut\\gdal_lut_4.txt"
-                # ]
-
-                # for i, lut_file in enumerate(lut_files, start=1):
-                #     output_lut_tif = f"32UMF_RGBI_8bit_{i}.tif"
-                #     subprocess.run([
-                #         "gdal_lut",
-                #         input_8bit_tif,
-                #         "-srcband", str(i),
-                #         output_lut_tif,
-                #         "-lutfile", lut_file
-                #     ])
-
-                # # GDAL Build VRT
-                # input_lut_tifs = [
-                #     "32UMF_RGBI_8bit_1.tif",
-                #     "32UMF_RGBI_8bit_2.tif",
-                #     "32UMF_RGBI_8bit_3.tif",
-                #     "32UMF_RGBI_8bit_4.tif"
-                # ]
-                # output_vrt = "32UMF_RGBI_8bit_lut.vrt"
-
-                # gdal.BuildVRT(output_vrt, input_lut_tifs, separate=True)
+        return lut_vrts
