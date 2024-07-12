@@ -20,7 +20,6 @@ class CloudMask():
     def scl_to_cloudmask(self):
         #current code saves all inbetween steps as seperate files. In future, maybe remove excess?
 
-        calc_path = "tools/gdal_calc.py"
         scl_tif = os.path.join(self.cloud_dir,  "SCL01.tif")
         scl_250 = os.path.join(self.cloud_dir,  "SCL01_250m.tif")
         cloud_nodata = os.path.join(self.cloud_dir, "cloud_and_nodata.shp")
@@ -57,10 +56,7 @@ class CloudMask():
         CMTools.translate_vector(footprint_60, out_buffer_32, "EPSG:32632")
         CMTools.translate_vector(footprint_60, out_buffer_33, "EPSG:32633")
 
-
         #Update footprint
         footprint = CMTools.update_footprint(footprint_60, "FOOTPRINT", self.today)
-
-
 
         return out_buffer_32, out_buffer_33, footprint

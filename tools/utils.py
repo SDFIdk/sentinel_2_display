@@ -24,7 +24,6 @@ class Utils:
         else:
             raise ValueError(f"{file_path} does not match UTM pattern")
 
-
     def run_gdal_calc(command):
         try:
             subprocess.run(command, check=True)

@@ -183,5 +183,4 @@ class BuildVRTs:
 
             lut_vrts.append(output_vrt)
         
-
         return lut_vrts
