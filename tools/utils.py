@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import shutil
 
 class Utils:
 
@@ -29,3 +30,21 @@ class Utils:
             subprocess.run(command, check=True)
         except subprocess.CalledProcessError as e:
             print(f"An error occurred: {e}")
+
+    def safer_remove(path):
+        """Attempt to remove a file or directory with retries for locked files."""
+        max_retries = 5
+        retry_delay = 1  # one second
+
+        for _ in range(max_retries):
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                elif os.path.isfile(path):
+                    os.remove(path)
+                break
+            except Exception as e:
+                print(f"# Warning: failed to delete {path} due to {e}")
+                time.sleep(retry_delay)
+        else:
+            print(f"# Error: could not delete {path} after {max_retries} retries.")

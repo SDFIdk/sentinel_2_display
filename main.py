@@ -6,16 +6,17 @@ import pathlib
 from download.cdse_tile_downloader import get_data
 from tools.build_vrts import BuildVRTs
 from tools.cloud_mask import CloudMask
-from tools.update_rgbi import TIFFBurner
+from tools.burn_tiff import TIFFBurner
 from tools.generate_cut_vrt import cut_vrt
 from tools.wms_update import WMSUpdate
+from tools.utils import Utils
 
 
 #TODO implement a garbage collection system
     #a util which deletes a file list
     #a garbage collect global var to send designated to deletion
 
-def main(safe_dir, garbage_collect):
+def main(safe_dir, garbage_collect = False):
 
     pathlib.Path(safe_dir).mkdir(parents=True, exist_ok=True)
 
@@ -53,6 +54,8 @@ def main(safe_dir, garbage_collect):
     qc_vrt = build_vrts.build_single_band_vrt(band = 'B02_10m', output = 'Sentinel_DK_B02.vrt')
     scl_vrt = build_vrts.build_single_band_vrt(band = 'SCL_20m', output = 'Sentinel_DK_SCL.vrt')
 
+    if garbage_collect: Utils.safer_remove(safe_dir)
+
     rgbi_bands = build_vrts.build_rgbi_vrt()
     ndvi_bands = build_vrts.build_ndvi_vrt()
     evi_bands = build_vrts.build_evi_vrt()
@@ -60,16 +63,22 @@ def main(safe_dir, garbage_collect):
 
     #3CLoud_mask_SCL.bat
     #ALSO HANDLES UPDATE FOOTPRINT FROM STEP 4
-    cloud_mask = CloudMask(available_tiles, date_dir, scl_vrt, qc_vrt, today.strftime('%Y%m%d'))
+    cloud_mask = CloudMask(available_tiles, date_dir, scl_vrt, qc_vrt, today.strftime('%Y%m%d'), garbage_collect = garbage_collect)
     out_buffer32, out_buffer33, footprint = cloud_mask.scl_to_cloudmask()
 
     #4update_All_run.bat
-    mask_burner = TIFFBurner(out_buffer32, out_buffer33)
+    mask_burner = TIFFBurner(out_buffer32, out_buffer33, garbage_collect = garbage_collect)
     rgbi_tiffs = mask_burner.burn_to_tiff(rgbi_bands, rgbi_destination)
     ndvi_tiffs = mask_burner.burn_to_tiff(ndvi_bands, ndvi_destination)
     evi_tiffs = mask_burner.burn_to_tiff(evi_bands, evi_destination)
     lai_tiffs = mask_burner.burn_to_tiff(lai_bands, lai_destination)
     #are VI bands meant to be part of the LUTs or are they separate files?
+
+    if garbage_collect:
+        Utils.safer_remove(rgbi_bands)
+        Utils.safer_remove(ndvi_bands)
+        Utils.safer_remove(evi_bands)
+        Utils.safer_remove(lai_bands)
 
     #call Update_RGBI_Gdal_lut.bat
     #also is suppoed to do footprints but thats now handled in scl_to_cloudmask
@@ -85,4 +94,4 @@ def main(safe_dir, garbage_collect):
 
     
 if __name__ == "__main__": 
-    main('zip/', garbage_collect=True)
+    main('zip/', garbage_collect=False)
