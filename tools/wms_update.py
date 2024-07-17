@@ -8,13 +8,11 @@ class WMSUpdate:
     def __init__(self, input_tif, wms_destination, compress = "JPEG", quality = 85):
         self.input_tif = input_tif
         self.wms_destination = wms_destination
+        pathlib.Path(self.wms_destination).mkdir(parents=True, exist_ok=True)
         with open('constants/wms.txt', 'r') as file:
             self.wms_tiles = ast.literal_eval(file.read())
         self.compress = compress
         self.quality = quality
-
-        
-
 
     def run(self):
 
@@ -22,9 +20,6 @@ class WMSUpdate:
 
             ds = gdal.Open(input_vrt, gdal.GA_Update)
             ds.BuildOverviews('average', [2, 4, 10, 25, 50, 100, 200, 500, 1000])
-
-
-        pathlib.Path(self.wms_destination).mkdir(parents=True, exist_ok=True)
 
         wms_tiles = []
         for i, bbox, wms_id in enumerate(self.wms_tiles.items()):

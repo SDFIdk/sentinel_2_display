@@ -1,6 +1,7 @@
 from tools.cloud_mask_tools import CMTools
 from tools.utils import Utils
 import os
+import sys
 import pathlib
 
 class CloudMask():
@@ -10,7 +11,7 @@ class CloudMask():
         self.working_dir = working_dir
         self.cloud_dir = os.path.join(working_dir + "cloud_mask")
         pathlib.Path(self.cloud_dir).mkdir(parents=True, exist_ok=True)
-        self.calc_path = "tools/gdal_calc.py"
+        self.calc_path = "tools\\gdal_calc.py"
         self.garbage_collect = garbage_collect
 
         self.scl = scl_band
@@ -18,7 +19,7 @@ class CloudMask():
         self.today = today
 
 
-    def scl_to_cloudmask(self, garbage_collect = False):
+    def scl_to_cloudmask(self):
         scl_tif = os.path.join(self.cloud_dir,  "SCL01.tif")
         scl_250 = os.path.join(self.cloud_dir,  "SCL01_250m.tif")
         cloud_nodata = os.path.join(self.cloud_dir, "cloud_and_nodata.shp")

@@ -1,12 +1,13 @@
 from tools.vrt_tools import VRTTools
 from tools.utils import Utils
 import os
+import sys
 
 class BuildVRTs:
 
     def __init__(self, available_tiles, crs = None):
         self.available_tiles = available_tiles
-        self.calc_path = "tools/gdal_calc.py"
+        self.calc_path = "tools\\gdal_calc.py"
         self.utm_32, self.utm_33 = VRTTools.sort_tiles_by_utm(self.available_tiles)
         if not crs: self.crs = 'EPSG:25832' #standard CRS for DK
  
@@ -20,11 +21,11 @@ class BuildVRTs:
         
         utm_32_scl_vrt = VRTTools.combine_common_utm_files(
             vrt_input_files = [f"{tile}\{band}.jp2" for tile in self.utm_32],
-            output  = f"sentinel_{band}_UTM32_{self.crs}.vrt"
+            output  = f"sentinel_{band}_UTM32.vrt"
         )
         utm_33_scl_vrt = VRTTools.combine_common_utm_files(
             vrt_input_files = [f"{tile}\{band}.jp2" for tile in self.utm_33],
-            output  = f"sentinel_{band}_UTM33_{self.crs}.vrt"
+            output  = f"sentinel_{band}_UTM33.vrt"
         )
 
         return VRTTools.combine_vrts([utm_32_scl_vrt, utm_33_scl_vrt], output)
@@ -33,15 +34,14 @@ class BuildVRTs:
     def build_rgbi_vrt(self):
         """
         Builds a vrt with seperate bands from a list of dataset paths
-        Output name optional, defaults to RGBI.vrt
         """
 
         rgbi_bands = []
         for tile in self.available_tiles:
-            b4 = os.path.join(tile, '/B04_10m.jp2')
-            b3 = os.path.join(tile, '/B03_10m.jp2')
-            b2 = os.path.join(tile, '/B02_10m.jp2')
-            b8 = os.path.join(tile, '/B08_10m.jp2')
+            b4 = os.path.join(tile, 'B04_10m.jp2')
+            b3 = os.path.join(tile, 'B03_10m.jp2')
+            b2 = os.path.join(tile, 'B02_10m.jp2')
+            b8 = os.path.join(tile, 'B08_10m.jp2')
 
             output = os.path.join(tile, 'RGBI.vrt')
 
@@ -54,13 +54,11 @@ class BuildVRTs:
     def build_ndvi_vrt(self):
         """
         Builds a VRT with separate bands from a list of dataset paths and calculates NDVI.
-        Output name optional, defaults to NDVI.vrt.
         """
-
         ndvi_vrts = []
         for tile in self.available_tiles:
-            b4 = os.path.join(tile, '/B04_10m.jp2')
-            b8 = os.path.join(tile, '/B08_10m.jp2')
+            b4 = os.path.join(tile, 'B04_10m.jp2')
+            b8 = os.path.join(tile, 'B08_10m.jp2')
 
             ndvi_bands = os.path.join(tile, 'ndvi_bands.vrt')
             ndvi_vrt = os.path.join(tile, 'ndvi.vrt')
@@ -79,7 +77,6 @@ class BuildVRTs:
                 "--calc=\"(A-B)/(A+B)\"",
             ]
             Utils.run_gdal_calc(command)
-
             ndvi_vrts.append(ndvi_vrt)
 
         return ndvi_vrts
@@ -113,7 +110,6 @@ class BuildVRTs:
                     "--calc=(2.5 * ((A - B) / (A + 6 * B - 7.5 * C + 1)))"
                 ]
             Utils.run_gdal_calc(command)
-            
             evi_vrts.append(evi_vrt)
 
         return evi_vrts

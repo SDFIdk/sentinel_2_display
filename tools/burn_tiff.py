@@ -1,6 +1,7 @@
 import os
 from tools.vrt_tools import VRTTools
 from tools.utils import Utils
+import pathlib
 
 class TIFFBurner:
     def __init__(self, mask_32, mask_33):
@@ -8,6 +9,8 @@ class TIFFBurner:
         self.mask_33 = mask_33
 
     def burn_to_tiff(self, vrt_bands, output_dir):
+
+        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         output_tiffs = []
         for vrt in vrt_bands:

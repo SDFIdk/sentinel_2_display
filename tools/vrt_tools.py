@@ -4,6 +4,7 @@ import tempfile
 import subprocess
 from constants.constants import Constants
 from tools.utils import Utils
+import sys
 
 class VRTTools:
 
@@ -17,19 +18,19 @@ class VRTTools:
         Build VRT from files in dir with same UTM crs and warp to CRS
         """
 
-        with tempfile.NamedTemporaryFile(suffix='.vrt', delete=True, delete_on_close = True) as temp_vrt:
-            tmp = temp_vrt.name
+        if len(vrt_input_files) == 0: 
+            return None
 
-            datasets = [gdal.Open(input_file) for input_file in vrt_input_files]
+        datasets = [gdal.Open(input_file) for input_file in vrt_input_files]
 
-            options = gdal.BuildVRTOptions(srcNodata=0)
-            gdal.BuildVRT(tmp, datasets, options=options)
+        options = gdal.BuildVRTOptions(
+            resampleAlg=resample,
+            # outputSRS=crs,    #RuntimeError: Translating SRS failed: EPSG:25832      for some reason this thing doesnt recognize EPSG:25832
+            srcNodata=0,
+        )
+        gdal.BuildVRT(output, datasets, options=options)
 
-            options = gdal.WarpOptions(
-                dstSRS=crs,
-                resample=resample
-            )
-            gdal.Warp(output, tmp, options=options)
+        #TODO WARP TO CRS SEPARATELY
 
         return output
     
@@ -39,13 +40,13 @@ class VRTTools:
             output = os.path.commonprefix(input_vrts) + ".tif"
             if not output: output = "common_vrt.tif"
 
-        with tempfile.NamedTemporaryFile(suffix='.vrt', delete=True, delete_on_close = True) as temp_vrt:
+        with tempfile.NamedTemporaryFile(suffix='.vrt', delete=False) as temp_vrt:
             tmp = temp_vrt.name
 
-            datasets = [gdal.Open(input_file) for input_file in input_vrts]
-            gdal.BuildVRT(tmp, datasets)
+        datasets = [gdal.Open(input_file) for input_file in input_vrts if input_file is not None]
 
-            gdal.Translate(output, tmp, xRes=60, yRes=60)
+        gdal.BuildVRT(tmp, datasets)#.close()
+        gdal.Translate(output, tmp, xRes=60, yRes=60)
 
         return output
 
@@ -53,20 +54,21 @@ class VRTTools:
     def sort_tiles_by_utm(available_tiles):
 
         dk_tiles = Constants.get_tile_list()
-
+        
         #hardcoded for utm zones covering DK 
         utm_32 = []
         utm_33 = []
 
-        #CHECK THAT A TILE ID IS A PATH AND THAT EVERYTHING WORKS WITH THAT
         for tile in available_tiles:
-            if tile in dk_tiles:
-                utm = Utils.extract_utm(tile)
+            tile_id = os.path.basename(tile)
+            if tile_id in dk_tiles:
+                utm = tile_id[:2]
+
                 try:
                     if utm == '32': utm_32.append(tile)
                     elif utm == '33': utm_33.append(tile)
                 except Exception:
-                    print(f'UTM {tile[1:2]} from file {tile} is not a valid zone for DK')
+                    print(f'UTM {tile_id[1:2]} from file {tile_id} is not a valid zone for DK')
 
         return utm_32, utm_33
     
@@ -75,7 +77,10 @@ class VRTTools:
 
         datasets = [gdal.Open(band) for band in band_list]
 
-        options = gdal.WarpOptions(resample=resample, separate=separate)
+        options = gdal.BuildVRTOptions(
+            resampleAlg=resample, 
+            separate=separate
+            )
         gdal.BuildVRT(output, datasets, options=options)
 
 
@@ -105,7 +110,6 @@ class VRTTools:
                 [0, 10000, 0, 255]
             ]
         )
-
 
 
     def build_lut(output_vrt, lut_instructions):

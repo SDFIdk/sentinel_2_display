@@ -2,6 +2,8 @@ import os
 import re
 import subprocess
 import shutil
+import sys
+import time
 
 class Utils:
 
@@ -16,8 +18,9 @@ class Utils:
         - str: The AA component of the folder name.
         """
 
-        base_dir = os.path.basename(os.path.dirname(file_path))
-        
+        base_dir = os.path.basename(file_path)
+        print(base_dir)
+
         match = re.match(r'T(\d{2})[A-Z]{3}', base_dir)
         
         if match:
@@ -27,7 +30,7 @@ class Utils:
 
     def run_gdal_calc(command):
         try:
-            subprocess.run(command, check=True)
+            subprocess.run(command, check=True, shell=True)
         except subprocess.CalledProcessError as e:
             print(f"An error occurred: {e}")
 
