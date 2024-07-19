@@ -14,7 +14,12 @@ class TIFFBurner:
 
         output_tiffs = []
         for vrt in vrt_bands:
-            tiff_name = os.path.basename(vrt).replace(".vrt", ".tiff")
+            tiff_name = os.path.basename(vrt).replace(".vrt", ".tif")
+
+            #SEE ALTERNATE NDVI METHOD
+            # tiff_name = os.path.basename(vrt).replace(".tif", "_TIF_TEST.tif")
+            # print(tiff_name)
+
             utm = Utils.extract_utm(vrt)
 
             if utm == 32: mask = self.mask_32

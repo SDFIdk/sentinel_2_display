@@ -12,18 +12,17 @@ class CMTools():
             yRes=250,
             resampleAlg="average"
         )
+
         gdal.Translate(output_file, input_file, options=options)
 
 
-    def polygonalize_tif(input_file, output_file, data_band = None):
+    def polygonalize_tif(input_file, output_file):
         src_ds = gdal.Open(input_file)
         src_band = src_ds.GetRasterBand(1)
 
-        if not data_band: data_band = os.path.splitext(data_band)[0]
-
         driver = ogr.GetDriverByName("ESRI Shapefile")
         out_ds = driver.CreateDataSource(output_file)
-        out_layer = out_ds.CreateLayer(data_band, geom_type=ogr.wkbPolygon)
+        out_layer = out_ds.CreateLayer(output_file, geom_type=ogr.wkbPolygon)
 
         field = ogr.FieldDefn("DN", ogr.OFTInteger)
         out_layer.CreateField(field)
@@ -45,16 +44,18 @@ class CMTools():
 
     def burn_cloudbuffer(input_shapefile, output_file, burn_value, inverse = False):
 
-        src_ds = gdal.Open(output_file, gdal.GA_Update)
-        gdal.Rasterize(src_ds, input_shapefile, burnValues=[burn_value], inverse=inverse)
+        dst_ds = gdal.Open(output_file, gdal.GA_Update)
+        gdal.Rasterize(dst_ds, input_shapefile, burnValues=[burn_value], inverse=inverse)
 
 
-    def translate_vector(input_file, output_file, target_srs):
-
-        gdal.VectorTranslate(
-            output_file,
-            input_file,
+    def translate_vector(input_vector, output_vector, target_srs):
+        options = gdal.VectorTranslateOptions(
             dstSRS=target_srs
+        )
+        gdal.VectorTranslate(
+            output_vector,
+            input_vector,
+            options=options
         )
 
 

@@ -1,3 +1,4 @@
+from osgeo_utils import gdal_calc
 from tools.cloud_mask_tools import CMTools
 from tools.utils import Utils
 import os
@@ -29,32 +30,43 @@ class CloudMask():
         out_buffer_32 = os.path.join(self.cloud_dir, "out_buffer32")
         out_buffer_33 = os.path.join(self.cloud_dir, "out_buffer33")
 
-        command = [
-            self.calc_path,
-            "--format=GTiff",
-            "-A", self.scl,
-            "--outfile", scl_tif,
-            "--calc", "(A<=6)*0 + (A>=7)*(A<=10)*1 + (A>10)*0"
-        ]
-        Utils.run_gdal_calc(command)
+        gdal_calc.Calc(
+            calc = "(A<=6)*0 + (A>=7)*(A<=10)*1 + (A>10)*0",
+            A = self.scl,
+            A_band = 1,
+            outfile = scl_tif,
+            overwrite = True,
+            format = "GTiff",
+        )
+
         CMTools.resolution_averaging(scl_tif, scl_250)
         CMTools.polygonalize_tif(scl_250, cloud_nodata)
+
         CMTools.buffer_nodata(cloud_nodata, cloud_nodata_buffer)
 
-        command = [
-            self.calc_path,
-            "--format=GTiff",
-            "--type=Float32"
-            "-A", self.scl,
-            "--outfile", footprint_60,
-            "--calc", f"0*(A<=0.01) + (A>0.01)*{self.today}"
-        ]
-        Utils.run_gdal_calc(command)
+        gdal_calc.Calc(
+            calc = f"0*(A<=0.01) + (A>0.01)*{self.today}",
+            A = self.scl,
+            A_band = 1,
+            outfile = footprint_60,
+            overwrite = True,
+            format = "GTiff",
+            type = "Float32"
+        )
+
         CMTools.burn_cloudbuffer(cloud_nodata_buffer, footprint_60, self.today, inverse = True)
         CMTools.burn_cloudbuffer(cloud_nodata_buffer, footprint_60, 0)
         CMTools.polygonalize_tif(footprint_60, out_buffer)
-        CMTools.translate_vector(footprint_60, out_buffer_32, "EPSG:32632")
-        CMTools.translate_vector(footprint_60, out_buffer_33, "EPSG:32633")
+        print(footprint_60)
+        print(out_buffer_32)
+
+        #FIXME GDAL CAN NO LONGER PROCESS EPSGS. SEE FIX IN FIREFOX BOOKMARK
+
+        CMTools.translate_vector(out_buffer, out_buffer_32, "EPSG:4326")
+        CMTools.translate_vector(out_buffer, out_buffer_33, "EPSG:4326")
+        print('FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! ')
+        print('FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! ')
+        print('FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! FAIL PASSED !!! ')
 
         #Update footprint
         footprint = CMTools.update_footprint(footprint_60, "FOOTPRINT", self.today)

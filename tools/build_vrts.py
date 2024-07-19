@@ -1,15 +1,17 @@
 from tools.vrt_tools import VRTTools
 from tools.utils import Utils
+from osgeo_utils import gdal_calc
 import os
 import sys
 
 class BuildVRTs:
 
-    def __init__(self, available_tiles, crs = None):
+    def __init__(self, available_tiles, crs = None, garbage_collect = False):
         self.available_tiles = available_tiles
         self.calc_path = "tools\\gdal_calc.py"
         self.utm_32, self.utm_33 = VRTTools.sort_tiles_by_utm(self.available_tiles)
         if not crs: self.crs = 'EPSG:25832' #standard CRS for DK
+        self.garbage_collect = garbage_collect
  
 
     def build_single_band_vrt(self, band, output):
@@ -28,8 +30,13 @@ class BuildVRTs:
             output  = f"sentinel_{band}_UTM33.vrt"
         )
 
-        return VRTTools.combine_vrts([utm_32_scl_vrt, utm_33_scl_vrt], output)
-    
+        VRTTools.combine_vrts([utm_32_scl_vrt, utm_33_scl_vrt], output)
+
+        if self.garbage_collect:
+            Utils.safer_remove(utm_32_scl_vrt)
+            Utils.safer_remove(utm_33_scl_vrt)
+
+        return output
 
     def build_rgbi_vrt(self):
         """
@@ -77,7 +84,22 @@ class BuildVRTs:
                 "--calc=\"(A-B)/(A+B)\"",
             ]
             Utils.run_gdal_calc(command)
+
+            # gdal_calc.Calc(
+            #     calc = "(A-B)/(A+B)",
+            #     A = ndvi_bands,
+            #     A_band = 1,
+            #     B = ndvi_bands,
+            #     B_bands = 2,
+            #     # outfile = ndvi_vrt,
+            #     outfile = 'NDVI_TEST.tif',
+            #     overwrite = True,
+            #     format = "GTiff",
+            #     type = "Float32",
+            # )
+
             ndvi_vrts.append(ndvi_vrt)
+
 
         return ndvi_vrts
     

@@ -11,10 +11,16 @@ from tools.generate_cut_vrt import cut_vrt
 from tools.wms_update import WMSUpdate
 from tools.utils import Utils
 
+    #FIXME GDAL CAN NO LONGER PROCESS EPSGS. SEE FIX IN FIREFOX BOOKMARK
 
-#TODO implement a garbage collection system
-    #a util which deletes a file list
-    #a garbage collect global var to send designated to deletion
+    #TODO ENSURE THERE ARE NO TODOS IN THE SCRIPT!
+    #TODO ENSURE CORRECT CRS IS SET, SEE TODO IN vrt_tools, combine_common_utm_files
+    #TODO ENSURE SCRIPT CAN HANDLE EMPTY UTM LISTS
+    #TODO ASK ABOUT THE GDAL LUT APPLICATION, WHERE DO I GET IT FROM?
+    #TODO ENABLE VI SCRIPTS SOMEHOW, CHECK ndvi_tools.py FOR A NON-CALC SOLUTION
+        #LOOK INTO THE ALTERNATIVE GDAL CALC VERSION IN build_ndvi_vrt
+        #OUTPUTTING FROM THERE TO GTIFF INSTEAD OF VRT SHOULD BE COMPATIBLE WITH THE MASKBURNER
+    #TODO TEST GARBAGE_COLLECT
 
 def main(safe_dir, garbage_collect = False):
 
@@ -39,11 +45,6 @@ def main(safe_dir, garbage_collect = False):
     gdal.SetConfigOption('INTERLEAVE_OVERVIEW', 'PIXEL')
     gdal.SetConfigOption('BIGTIFF_OVERVIEW', 'YES')
 
-    #TODO ENSURE THERE ARE NO TODOS IN THE SCRIPT!
-    #TODO ENSURE CORRECT CRS IS SET, SEE TODO IN vrt_tools, combine_common_utm_files
-    #TODO ENSURE SCRIPT CAN HANDLE DATA IN ONE UTM BUT NOT THE OTHER
-    #TODO ASK ABOUT THE GDAL LUT APPLICATION, WHERE DO I GET IT FROM?
-    #TODO ENABLE VI SCRIPTS SOMEHOW, CHECK ndvi_tools.py FOR A NON-CALC SOLUTION
 
     #1run_CDSE_etc
     available_tiles = get_data(
@@ -58,15 +59,15 @@ def main(safe_dir, garbage_collect = False):
         return
 
     #2run_buildvrt
-    build_vrts = BuildVRTs(available_tiles)
-    qc_vrt = build_vrts.build_single_band_vrt(band = 'B02_10m', output = 'Sentinel_DK_B02.vrt')
-    scl_vrt = build_vrts.build_single_band_vrt(band = 'SCL_20m', output = 'Sentinel_DK_SCL.vrt')
+    build_vrts = BuildVRTs(available_tiles, garbage_collect = garbage_collect)
+
+    qc_vrt = build_vrts.build_single_band_vrt(band = 'B02_10m', output = f'{date_dir}/Sentinel_DK_B02.vrt')
+    scl_vrt = build_vrts.build_single_band_vrt(band = 'SCL_20m', output = f'{date_dir}/Sentinel_DK_SCL.vrt')
 
     rgbi_bands = build_vrts.build_rgbi_vrt()
-    ndvi_bands = build_vrts.build_ndvi_vrt()
+    # ndvi_bands = build_vrts.build_ndvi_vrt()
     # evi_bands = build_vrts.build_evi_vrt()
-    sys.exit()
-    lai_bands = build_vrts.build_lai_vrt()
+    # lai_bands = build_vrts.build_lai_vrt()
 
     if garbage_collect: Utils.safer_remove(safe_dir)
 
