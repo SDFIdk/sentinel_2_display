@@ -5,11 +5,15 @@ import pathlib
 
 class CMTools():    
 
-    def resolution_averaging(input_file, output_file):
+    def resolution_averaging(input_file, output_file, xRes = 250, yRes = 250):
+
+        """
+        Resamples file to new spatial resolution
+        """
         
         options = gdal.TranslateOptions(
-            xRes=250,
-            yRes=250,
+            xRes=xRes,
+            yRes=yRes,
             resampleAlg="average"
         )
 
@@ -42,7 +46,7 @@ class CMTools():
         )
 
 
-    def burn_cloudbuffer(input_shapefile, output_file, burn_value, inverse = False):
+    def burn_cloudmask(input_shapefile, output_file, burn_value, inverse = False):
 
         dst_ds = gdal.Open(output_file, gdal.GA_Update)
         gdal.Rasterize(dst_ds, input_shapefile, burnValues=[burn_value], inverse=inverse)

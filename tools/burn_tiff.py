@@ -22,6 +22,7 @@ class TIFFBurner:
 
             utm = Utils.extract_utm(vrt)
 
+            #ensure these masks do not replace data with the current date
             if utm == 32: mask = self.mask_32
             elif utm == 33: mask = self.mask_33
 

@@ -19,7 +19,6 @@ class Utils:
         """
 
         base_dir = os.path.basename(file_path)
-        print(base_dir)
 
         match = re.match(r'T(\d{2})[A-Z]{3}', base_dir)
         

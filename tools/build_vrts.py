@@ -6,12 +6,17 @@ import sys
 
 class BuildVRTs:
 
-    def __init__(self, available_tiles, crs = None, garbage_collect = False):
+    def __init__(
+            self, 
+            available_tiles, 
+            calc_path = "tools/gdal_calc.py",
+            garbage_collect = False,
+        ):
+
         self.available_tiles = available_tiles
-        self.calc_path = "tools\\gdal_calc.py"
-        self.utm_32, self.utm_33 = VRTTools.sort_tiles_by_utm(self.available_tiles)
-        if not crs: self.crs = 'EPSG:25832' #standard CRS for DK
+        self.calc_path = calc_path
         self.garbage_collect = garbage_collect
+        self.utm_32, self.utm_33 = VRTTools.sort_tiles_by_utm(self.available_tiles)
  
 
     def build_single_band_vrt(self, band, output):
@@ -40,7 +45,8 @@ class BuildVRTs:
 
     def build_rgbi_vrt(self):
         """
-        Builds a vrt with seperate bands from a list of dataset paths
+        Builds a vrt with seperate bands for each of available tiles
+        Returns a list of paths to rgbi vrts        
         """
 
         rgbi_bands = []
@@ -177,7 +183,7 @@ class BuildVRTs:
     
     def lut_vrt_from_rgbi(rgbi_tifs):
         """
-        Applies the same process as run_gdal_lut.bat on a single RGBI tif.
+        Applies a look up table on a single RGBI tif or vrt.
         Outputs are extrapolated from input and stored in same directory.
         Returns path to final output
         """
@@ -194,10 +200,10 @@ class BuildVRTs:
                 "constants/lut_4.txt",
             ]
 
-            lut_tifs = VRTTools.build_lut(eightbit_tif, lut_instructions)
+            lut_tifs = VRTTools.apply_lut_to_bands(eightbit_tif, lut_instructions)
 
             output_vrt = eightbit_tif.replace(".tif", "_lut.vrt")
-            VRTTools.build_lut_vrt(lut_tifs, output_vrt)
+            VRTTools.build_lut(lut_tifs, output_vrt)
 
             lut_vrts.append(output_vrt)
         

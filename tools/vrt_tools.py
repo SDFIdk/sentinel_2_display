@@ -112,29 +112,46 @@ class VRTTools:
         )
 
 
-    def build_lut(output_vrt, lut_instructions):
+    # def build_lut(input_vrt, lut_instructions, gdal_lut = "tools/gdal_lut.py"):
 
-        # install gdal lut somehow? Can this be a file to be included in the package like calc?
-        # is it related to this https://github.com/sudhirmurthy/gdal-examples/blob/master/gdal_lut.py   ?
+        # # install gdal lut somehow? Can this be a file to be included in the package like calc?
+        # # is it related to this https://github.com/sudhirmurthy/gdal-examples/blob/master/gdal_lut.py   ?
 
-        outputs = []
-        for i, lut in enumerate(lut_instructions, start=1):
-            output_lut_tif = output_vrt.replace(".tif", f"_{i}.tif")
-            outputs.append(output_lut_tif)
-            subprocess.run([
-                "gdal_lut",
-                output_vrt,
-                "-srcband", str(i), 
-                output_lut_tif,
-                "-lutfile", lut
-            ])
+        # outputs_bands = []
+        # for i, lut in enumerate(lut_instructions, start=1):
+        #     output_lut_tif = input_vrt.replace(".tif", f"_{i}.tif")
+        #     outputs_bands.append(output_lut_tif)
+        #     subprocess.run([
+        #         gdal_lut,
+        #         input_vrt,
+        #         "-srcband", str(i), 
+        #         output_lut_tif,
+        #         "-lutfile", lut
+        #     ])
 
-        return outputs
+        # # TODO recombine output_bands to vrt
 
+        # return outputs_bands
 
-    def build_lut_vrt(input_lut_tifs, output_vrt):
+    def apply_lut_to_bands(input_tif, lut_instructions, gdal_lut_script='tools/gdal_lut.py'):
+        """
+        Apply LUT to each band of a TIFF file using the gdal_lut.py script.
 
-        VRTTools.build_lut(input_lut_tifs, output_vrt)
-
-        
-
+        Parameters:
+        - input_tif (str): Path to the input TIFF file.
+        - lut_instructions (list): List of paths to the LUT text files, one for each band.
+        - gdal_lut_script (str): Path to the gdal_lut.py script.
+        """
+        for band_index, lut_file in enumerate(lut_instructions, start=1):
+            output_file = f"{input_tif.split('.')[0]}_band{band_index}_lut.tif"
+            
+            cmd = [
+                'python', gdal_lut_script,
+                input_tif, '-srcband', str(band_index),
+                output_file, '-dstband', '1',
+                '-lutfile', lut_file,
+                '-of', 'GTiff'
+            ]
+            
+            print(f"Applying LUT to band {band_index} using {lut_file}")
+            subprocess.run(cmd, check=True)
